@@ -5,7 +5,7 @@ import traceback
 from discord import Intents
 from discord.ext import commands
 from discord import Embed
-
+from dotenv import load_dotenv
 
 bot = commands.Bot(command_prefix='!', owner_id=250782339758555136,
                    intents=Intents.all())
@@ -42,4 +42,5 @@ if __name__ == "__main__":
         if file.endswith(".py"):
             bot.load_extension(f"cogs.{file[:-3]}")
 
-    bot.run('ODQ0MzQwNDU1NTkyNDI3NTMw.YKQ_Uw.9ZTBwZXWD-1DP6P1_ja7vNhrT4Y')
+    load_dotenv("token.env")
+    bot.run(os.getenv('DISCORD_TOKEN'))
