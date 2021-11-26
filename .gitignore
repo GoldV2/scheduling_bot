@@ -1,2 +1,4 @@
 token.env
 utils/keys.json
+utils/users.db
+__pycache__/
