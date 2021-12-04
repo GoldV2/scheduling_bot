@@ -25,8 +25,8 @@ async def on_error(event, *args, **kwargs):
     type, value, tb = sys.exc_info()
     tb_string = traceback.format_tb(tb)
 
-    msg = args[0]
-    author = msg.author.name + "#" + msg.author.discriminator
+    member = args[0]
+    author = member.name + "#" + member.discriminator
     embed = Embed(title=value, description=f"Event: {event}\nType: {str(type)}\nBy: {author}")
     for part, line in enumerate(tb_string):
         embed.add_field(name=part, value=line, inline=False)
