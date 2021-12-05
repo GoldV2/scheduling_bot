@@ -4,11 +4,10 @@ from datetime import datetime
 from discord.ext import commands
 
 from bot import path
-from cogs import events
-from cogs import sheet_tasks
-from utils import db_management
-from cogs import helpers
-
+from cogs.events import Events
+from cogs.helpers import Helpers
+from sheets.sheet_tasks import SheetTasks
+from db.db_management import DB
 
 class ManagerCommands(commands.Cog):
     def __init__(self, bot):
@@ -19,50 +18,28 @@ class ManagerCommands(commands.Cog):
 
     @commands.command()
     @commands.check(manager_command_check)
-    async def make_evaluator(self, ctx, evaluator_id):
-
-        evaluator = ctx.guild.get_member(int(evaluator_id))
-        if "Evaluator" not in [role.name for role in evaluator.roles]:
-            db_management.remove_teacher(evaluator.id)
-
-            availability = await helpers.Helpers.ask_availability(evaluator, self.bot)
-            courses = await helpers.Helpers.ask_courses(evaluator, self.bot)
-            
-            db_management.add_evaluator(evaluator.id, evaluator.nick, availability, courses)
-            await helpers.Helpers.give_role(ctx, evaluator, 'Evaluator')
-
-            await helpers.Helpers.update_evaluator_availability_message(ctx, helpers.Helpers.get_evaluator_availabilities())
-
-        else:
-            print("User is already an evaluator.")
-
-    @commands.command()
-    @commands.check(manager_command_check)
     async def reset_member(self, ctx, member_id):
         member = ctx.guild.get_member(int(member_id))
-        await events.Events.on_member_remove(member)
+        await Events.on_member_remove(member)
 
-        await helpers.Helpers.update_evaluator_availability_message(ctx, helpers.Helpers.get_evaluator_availabilities())
+        await Helpers.update_evaluator_availability_message(self.bot)
 
     @commands.command()
     @commands.check(manager_command_check)
     async def update_database_sheet(self, ctx):
-        await sheet_tasks.SheetTasks.update_database_sheet()
+        await SheetTasks.update_database_sheet()
 
     @commands.command()
     @commands.check(manager_command_check)
     async def update_evaluation_sheet(self, ctx):
-        sheet_tasks.update_evaluation_sheet()
+        SheetTasks.update_evaluation_sheet()
 
     @commands.command()
     @commands.is_owner()
     async def view_db(self, ctx):
-        db_management.c.execute("SELECT * FROM teachers")
-        teachers = db_management.c.fetchall()
-        db_management.c.execute("SELECT * FROM evaluators")
-        evaluators = db_management.c.fetchall()
+        members, evaluators = DB.fetch_all()
 
-        print(teachers, "teachers")
+        print(members, "members")
         print(evaluators, 'evaluators')
 
     @commands.command()
@@ -77,13 +54,7 @@ class ManagerCommands(commands.Cog):
     @commands.command()
     @commands.is_owner()
     async def clear_evaluations(self, ctx, member_id):
-        member = ctx.guild.get_member(int(member_id))
-        if 'Evaluator' in [role.name for role in member.roles]:
-            db_management.evaluator_remove_evaluations(int(member_id))
+        DB.remove_evaluations(int(member_id))
         
-        else:
-            db_management.teacher_remove_evaluations(int(member_id))
-
-
 def setup(bot):
     bot.add_cog(ManagerCommands(bot))

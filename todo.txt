@@ -5,20 +5,18 @@ https://discordpy.readthedocs.io/en/stable/ext/commands/
 sql
 https://www.youtube.com/watch?v=pd-0G0MigUA
 
-* make it so that I can just give the person the evaluator role instead of !make_evaluator
-* make it so that the person can just change their names instead of having to send a message to edit-name
+ONLY USE RELOAD_COGS TO CHANGE SHIT WHEN THE BOT IS RUNNING
+
+# HARD
+
+* Create member and evaluator classes in each file as needed
 * organize the code into functions
-* make it so that the bot waits for raw_reactions
-    * bot stops waiting for reactions after a while
+
 * use buttons and dropdowns instead of reactions
-* make it so that the person has to @ the bot to use a command
-* use slash commands
-* make it clear that all times are EST
-* tell the evaluator what the day of the month the evaluation will be in before it is confirmed
-* use token.env
+* Combine same language courses in the same embed
+* add more robusts checks and remove default !help message
+* find a way to not need to take guild in as a paremeter
 
 # EASY
 
-in miscellaneous.py change "from utils.db_management import c" to "from utils import db_management"
-
-in sheet_tasks.py, AttributeError: 'staticmethod' object has no attribute 'before_loop'
+* make the first announcement channel an actual announcement

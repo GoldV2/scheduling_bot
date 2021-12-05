@@ -1,4 +1,5 @@
 token.env
-utils/keys.json
-utils/users.db
+keys.json
+users.db
 __pycache__/
+members.db

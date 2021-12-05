@@ -5,10 +5,11 @@ path = os.path.dirname(os.path.realpath(__file__))
 
 conn = sqlite3.connect(path + '/' + 'users.db')
 # conn = sqlite3.connect(":memory:")
-
+conn2 = sqlite3.connect(path + '/' + 'members.db')
 #######################################################################
 
 c = conn.cursor()
+c2 = conn2.cursor()
 
 # c.execute("""CREATE TABLE teachers
 #              (id integer,
@@ -21,6 +22,43 @@ c = conn.cursor()
 #               available text,
 #               courses text,
 #               evaluations text)""")
+
+# with conn2:
+#     c2.execute("""CREATE TABLE members
+#                 (id integer,
+#                 name text,
+#                 evaluations text,
+#                 is_evaluator integer)""")
+
+#     c2.execute("""CREATE TABLE evaluators
+#                 (id integer,
+#                 available text,
+#                 courses text)""")
+
+# with conn:
+#     c.execute("SELECT * FROM teachers")
+#     teachers = c.fetchall()
+#     c.execute("SELECT * FROM evaluators")
+#     evaluators = c.fetchall()
+
+# for member in teachers:
+#     with conn2:
+#         c2.execute("INSERT INTO members VALUES (?, ?, ?, ?)",
+#             (member[0], member[1], member[2], 0))
+
+# for member in evaluators:
+#     with conn2:
+#         c2.execute("INSERT INTO members VALUES (?, ?, ?, ?)",
+#             (member[0], member[1], member[4], 1))
+
+#         c2.execute("INSERT INTO evaluators VALUES (?, ?, ?)",
+#             (member[0], member[2], member[3]))
+
+with conn2:
+    c2.execute("SELECT * FROM evaluators")
+    members = c2.fetchall()
+    for member in members:
+        print(member, 'member')
 
 #######################################################################
 

@@ -3,8 +3,20 @@ from textwrap import dedent
 from discord.channel import DMChannel
 from discord.ext import commands
 
-from utils import db_management
-from cogs import helpers
+from db.db_management import DB
+from cogs.helpers import Helpers
+from cogs.evaluator_commands import ProfileView
+from cogs.schedule import ScheduleView
+
+class Member:
+    def __init__(self, bot, member):
+        self.bot = bot
+        self.member = member
+        self.nick = self.member.nick
+        self.roles = [role.name for role in self.member.roles]
+
+    def is_in_db(self):
+        return True if DB.fetch_one(self.member.id) and 'New Teacher' in self.roles else False
 
 class Events(commands.Cog):
 
@@ -26,15 +38,8 @@ class Events(commands.Cog):
                 **If you have any questions, contact a Manager**
                 *This bot does not respond to DMs*"""))
 
-        elif message.channel.name == 'edit-name' and message.author.id != message.guild.owner:
+        elif message.channel.name == 'edit-name':
             await message.author.edit(nick=message.content)
-
-            roles = [role.name for role in message.author.roles]
-            # subtracting one from roles because everyone has the @everyone role.
-            if not len(roles)-1 and 'New Teacher' not in roles:
-                await helpers.Helpers.give_role(message, message.author, 'New Teacher')
-                db_management.add_teacher(message.author.id, message.author.nick)
-
             await message.delete()
 
         print("Message sent by", message.author.name)
@@ -43,28 +48,28 @@ class Events(commands.Cog):
     @staticmethod
     @commands.Cog.listener()
     async def on_member_remove(member):
-        db_management.remove_evaluator(member.id)
-        db_management.remove_teacher(member.id)
+        DB.remove_member(member.id)
 
         for role in member.roles:
             if role.name != "@everyone" and role.name != "Manager":
                 await member.remove_roles(role)
 
-    @commands.Cog.listener()
-    async def on_member_update(self, before, after):
-        if before.nick != after.nick:
-            is_evaluator = False
-            for role in after.roles:
-                if role.name == 'Evaluator':
-                    is_evaluator = True
-                    db_management.update_evaluator_name(after.id, after.nick)
-                    break
+    @commands.Cog.listener('on_member_update')
+    async def update_member_nick(self, before, after):
+        member = Member(self.bot, after)
 
-            if not is_evaluator:
-                db_management.update_teacher_name(after.id, after.nick)
+        if before.nick != after.nick:
+            if member.is_in_db():
+                DB.update_member_name(after.id, after.nick)
+
+            else:
+                DB.add_member(after.id, after.nick)
+                await Helpers.give_role(self.bot, after, 'New Teacher')
 
     @commands.Cog.listener()
     async def on_ready(self):
+        self.bot.add_view(ProfileView(self.bot))
+        self.bot.add_view(ScheduleView(self.bot))
         print("Bot connected successfully!")
 
 

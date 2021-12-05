@@ -5,7 +5,7 @@ from discord import Embed, Colour
 from discord.utils import get
 from discord.ext import commands
 
-from utils import db_management
+from db.db_management import DB
 from cogs.constants import Constants
 
 
@@ -32,31 +32,31 @@ class Helpers(commands.Cog):
 
     #####################################################################
 
-    @staticmethod
-    async def remove_role(ctx, member, name):
-        role = get(ctx.guild.roles, name=name)
+    @staticmethod    
+    async def remove_role(bot, member, name):
+        role = get(bot.guilds[0].roles, name=name)
         await member.remove_roles(role)
 
     @staticmethod
-    async def give_role(ctx, member, name):
-        role = get(ctx.guild.roles, name=name)
+    async def give_role(bot, member, name):
+        role = get(bot.guilds[0].roles, name=name)
         await member.add_roles(role)
 
     #####################################################################
 
     @staticmethod
     def get_evaluator_availabilities():
-        db_management.c.execute("SELECT * FROM evaluators")
-        evaluators = db_management.c.fetchall()
+        DB.c.execute("SELECT * FROM evaluators")
+        evaluators = DB.c.fetchall()
 
         evaluator_avais = {}
 
         for evaluator in evaluators:
-            for course in evaluator[3].split(','):
+            for course in evaluator[2].split(','):
                 if course not in evaluator_avais:
                     evaluator_avais[course] = {}
 
-                evaluator_avai = evaluator[2].split(',')
+                evaluator_avai = evaluator[1].split(',')
                 for week_day_index, times_of_day in enumerate(evaluator_avai):
                     week_day_name = Constants.week_days[week_day_index]
                     if week_day_name not in evaluator_avais[course] and times_of_day:
@@ -92,8 +92,9 @@ class Helpers(commands.Cog):
         return sorted_evaluator_avais
 
     @staticmethod
-    async def update_evaluator_availability_message(ctx, evaluator_avais):
-        for channel in ctx.guild.channels:
+    async def update_evaluator_availability_message(bot):
+        evaluator_avais = Helpers.get_evaluator_availabilities()
+        for channel in bot.guilds[0].channels:
             if channel.name == 'evaluator-availability':
                 break
         
@@ -132,9 +133,6 @@ class Helpers(commands.Cog):
             await msg.edit(embed=embeds[i])
 
         
-
-
-
         # messages = []
         
         # for course in evaluator_avais:
@@ -155,22 +153,18 @@ class Helpers(commands.Cog):
         #         await channel.send(content=message)
 
     @staticmethod
-    # evaluation_time: (evaluation_day_index, evaluation_time_of_day)
-    def find_evaluator_availables(evaluation_info, guild):
+    def find_evaluator_availables(bot, evaluation_info):
         COURSE = 0
         DAY = 1
         PERIOD = 2
-        AVAILABLE_DAYS = 2
-        EVALUATOR_COURSES = 3
+        AVAILABLE_DAYS = 1
+        EVALUATOR_COURSES = 2
 
         evaluators_available = []
-        for member in guild.members:
+        for member in bot.guilds[0].members:
             if any(role.name == 'Evaluator' for role in member.roles):
-                print(member.id, "id")
-                print(member.name, member.nick)
-                db_management.c.execute("SELECT * FROM evaluators WHERE id=?", (member.id,))
-                evaluator = db_management.c.fetchone()
-                print(evaluator, 'evaluator')
+                DB.c.execute("SELECT * FROM evaluators WHERE id=?", (member.id,))
+                evaluator = DB.c.fetchone()
                 evaluator_available_days = evaluator[AVAILABLE_DAYS].split(',')
                 evaluator_available_periods = evaluator_available_days[Constants.week_days.index(evaluation_info[DAY])]
                 evaluator_courses = evaluator[EVALUATOR_COURSES]
@@ -181,73 +175,6 @@ class Helpers(commands.Cog):
                     evaluators_available.append(member)
         
         return evaluators_available
-
-    #####################################################################
-
-    @staticmethod
-    async def ask_availability(evaluator, bot):
-        def availabiity_confimation_check(reaction, user):
-            return user == evaluator and str(reaction.emoji) and reaction.emoji == '👍'
-
-        await evaluator.send(dedent("""
-            You will be sent 7 messages, one for each day of the week.
-            React with the times of the day you are available, then press the 👍 to confirm.
-            > 🌇: Morning
-            > 🏙️: Afternoon
-            > 🌃: Evening
-            > React only with the 👍 if you are not available that day"""))
-
-        availability = ''
-        for day in Constants.week_days:
-            m = await evaluator.send(f"When are you available on {day}?")
-            await Helpers.add_availability_emojis(m)
-            
-            reaction, user = await bot.wait_for('reaction_add', check=availabiity_confimation_check)
-
-            msg = get(bot.cached_messages, id=m.id)
-            reactions = msg.reactions
-            reactions.remove(reaction)
-
-            day_avai = ''
-            for reac in msg.reactions:
-                if reac.count > 1:
-                    day_avai += Constants.emoji_time_of_day[reac.emoji] + ' and '
-            
-            day_avai = day_avai[:-5]
-            availability += day_avai + ',' if day != 'Sunday' else day_avai
-
-        await evaluator.send("Availability set succesfully!")
-
-        return availability
-
-    @staticmethod
-    async def ask_courses(evaluator, bot):
-        def course_emojis_check(reaction, user):
-            return user == evaluator and reaction.emoji == '👍' and reaction.message == m
-
-        msg_content = "React with the courses you can evaluate for then press the 👍 to confirm.\n"
-        for key, value in Constants.emoji_courses.items():
-            msg_content += f'> {key}: {value}\n'
-        
-        m = await evaluator.send(msg_content)
-        await Helpers.add_course_availability_emojis(m)
-
-        reaction, user = await bot.wait_for('reaction_add', check=course_emojis_check)
-
-        msg = get(bot.cached_messages, id=m.id)
-        reactions = msg.reactions
-        reactions.remove(reaction)
-
-        courses = ''
-        for reac in msg.reactions:
-            if reac.count > 1:
-                courses += Constants.emoji_courses[reac.emoji] + ','
-        
-        courses = courses[:-1]
-
-        await evaluator.send("Courses set succesfully!")
-
-        return courses
 
     #####################################################################
 

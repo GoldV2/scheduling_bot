@@ -1,109 +1,23 @@
 
-from time import sleep
 from discord.ext import commands
+from discord import Member
 from datetime import datetime
 
-import discord
 from sheets.evaluation_sheet_management import EvaluationSheet
 from db.db_management import DB
 from cogs.helpers import Helpers
 from cogs.constants import Constants
 
-# TODO refactor this so these classes aren't so repetitive
-class CourseDropDown(discord.ui.Select):
-    def __init__(self, courses):
-    
-        self.my_options = []
-
-        for course in courses:
-            self.my_options.append(discord.SelectOption(label=course,
-                emoji=Constants.course_emojis[course]))
-
-        super().__init__(placeholder='Select a course', min_values=1, max_values=1, options=self.my_options)
-
-    async def callback(self, interaction):
-        self.disabled = True
-        self.view.course = self.values[0]
-
-        for option in self.my_options:
-            if option.label == self.values[0]:
-                option.default = True
-                break
-
-        await interaction.response.edit_message(view=self.view)
-
-        self.view.stop()
-
-class CourseView(discord.ui.View):
-    def __init__(self, courses):
-        super().__init__(timeout=None)
-
-        self.add_item(CourseDropDown(courses))
-
-class DayDropdown(discord.ui.Select):
-    def __init__(self, days):
-    
-        self.my_options = []
-
-        for day in days:
-            self.my_options.append(discord.SelectOption(label=day,
-                emoji=Constants.day_emojis[day]))
-
-        super().__init__(placeholder='Select a day', min_values=1, max_values=1, options=self.my_options)
-
-    async def callback(self, interaction):
-        self.disabled = True
-        self.view.day = self.values[0]
-
-        for option in self.my_options:
-            if option.label == self.values[0]:
-                option.default = True
-                break
-        
-        await interaction.response.edit_message(view=self.view)
-
-        self.view.stop()
-
-class DayView(discord.ui.View):
-    def __init__(self, days):
-        super().__init__(timeout=None)
-
-        self.add_item(DayDropdown(days))
-
-class PeriodDropDown(discord.ui.Select):
-    def __init__(self, periods):
-    
-        self.my_options = []
-
-        for period in periods:
-            self.my_options.append(discord.SelectOption(label=period,
-                emoji=Constants.time_of_day_emojis[period]))
-
-        super().__init__(placeholder='Select a time of the day', min_values=1, max_values=1, options=self.my_options)
-
-    async def callback(self, interaction):
-        self.disabled = True
-        self.view.period = self.values[0]
-        
-        for option in self.my_options:
-            if option.label == self.values[0]:
-                option.default = True
-                break
-        
-        await interaction.response.edit_message(view=self.view)
-
-        self.view.stop()
-
-class PeriodView(discord.ui.View):
-    def __init__(self, periods):
-        super().__init__(timeout=None)
-
-        self.add_item(PeriodDropDown(periods))
-
 class Teacher:
     def __init__(self, user):
         self.user = user
-        self.roles = [role.name for role in user.roles]
+
+    def is_currently_scheduling(self):
+        if self.user in ScheduleCommand.scheduling_now:
+            return True
+        
+        else:
+            return False
 
     def get_courses_available(self):
         teacher_courses = [role.name for role in self.user.roles]
@@ -117,25 +31,83 @@ class Teacher:
         return courses_available
 
     async def ask_course(self, courses_available):
-        view = CourseView(courses_available)
-        await self.user.send(content='Select a course to be evaluated on.', view=view)
+        def course_emojis_check(reaction, user):
+            return (user == self.user
+                    and reaction.emoji in Constants.emoji_courses
+                    and reaction.message == msg)
 
-        await view.wait()
-        return view.course
+        async def add_available_course_emojis(msg, courses):
+            for course in courses:
+                await msg.add_reaction(Constants.course_emojis[course])
+
+        # creating and sending message
+        msg_content = 'Which course would you like to be evaluated on?'
+        for course in courses_available:
+            msg_content += f'\n> {Constants.course_emojis[course]}: {course}'
+        msg = await self.user.send(msg_content)
+
+        # waiting for reaction
+        await add_available_course_emojis(msg, courses_available)
+        reaction, user = await instance.bot.wait_for('reaction_add', check=course_emojis_check)
+
+        # getting course and sending confirmation
+        evaluation_course = Constants.emoji_courses[reaction.emoji]
+        await self.user.send(f"Your evaluation will be on {evaluation_course}.")
+
+        return evaluation_course
 
     async def ask_week_day(self, available_days):
-        view = DayView(available_days)
-        await self.user.send(content='Select a day to be evaluated on.', view=view)
+        def day_emojis_check(reaction, user):
+            return (user == self.user
+                    and reaction.emoji in Constants.emoji_days
+                    and reaction.message == msg)
 
-        await view.wait()
-        return view.day  
+        async def add_week_day_emojis(msg, days):
+            for day in days:
+                await msg.add_reaction(Constants.day_emojis[day])
+        
+        # creating and sending message
+        msg_content = 'What day of the week would you like to be evaluated?'
+        for day in available_days:
+            msg_content += f'\n> {Constants.day_emojis[day]}: {day}'
+        msg = await self.user.send(msg_content)    
+
+        # waiting for reaction
+        await add_week_day_emojis(msg, available_days)
+        reaction, user = await instance.bot.wait_for('reaction_add', check=day_emojis_check)
+
+        # getting week_day and sending confirmation
+        evaluation_week_day_index = int(reaction.emoji[0])-1
+        evaluation_week_day = Constants.week_days[evaluation_week_day_index]
+        await self.user.send(f"Your evaluation will be on a {evaluation_week_day}.")
+
+        return evaluation_week_day
 
     async def ask_period_of_day(self, available_periods_of_day):
-        view = PeriodView(available_periods_of_day)
-        await self.user.send(content='Select a period of the day to be evaluated on.', view=view)
+        def period_of_day_reaction_check(reaction, user):
+            return (user == self.user
+                    and reaction.emoji in Constants.emoji_time_of_day
+                    and reaction.message == msg)
+        
+        async def add_periods_of_day_reactions(msg, times):
+            for time in times:
+                await msg.add_reaction(Constants.time_of_day_emojis[time])
 
-        await view.wait()
-        return view.period
+        # creating and sending message
+        msg_content = 'At what time of the day would you like to meet?'
+        for period in available_periods_of_day:
+            msg_content += f'\n> {Constants.time_of_day_emojis[period]}: {period}'
+        msg = await self.user.send(msg_content)
+
+        # waiting for reaction
+        await add_periods_of_day_reactions(msg, available_periods_of_day)
+        reaction, user = await instance.bot.wait_for('reaction_add', check=period_of_day_reaction_check)
+        
+        # getting evaluation_period_of and sending confirmation
+        evaluation_period_of_day = Constants.emoji_time_of_day[reaction.emoji]
+        await self.user.send(f"Your evaluation will be during the {evaluation_period_of_day}")
+
+        return evaluation_period_of_day
 
     async def ask_evaluation_info(self):
         courses_available = self.get_courses_available()
@@ -172,29 +144,24 @@ class Teacher:
 
         return reaction.emoji == '✅'
 
-class ScheduleView(discord.ui.View):
+class ScheduleCommand(commands.Cog):
+    scheduling_now = []
+    
     def __init__(self, bot):
-        super().__init__(timeout=None)
-
         self.bot = bot
-        self.scheduling_now = []
 
-    async def interaction_check(self, interaction):
-        member = Teacher(interaction.user)
-        if 'Evaluation Ready' not in member.roles:
-            await interaction.response.send_message('Only evaluation ready teachers can do this.', ephemeral=True)
-            return False
+    def sent_in_schedule_evaluation(ctx):
+        return ctx.channel.name == '📅schedule-evaluation📅'
 
-        elif interaction.user in self.scheduling_now:
-            await interaction.response.send_message('Finish scheduling a previous evaluation before trying again.', ephemeral=True)
-            return False
+    @commands.command()
+    @commands.check(sent_in_schedule_evaluation)
+    async def schedule(self, ctx):
+        teacher = Teacher(ctx.author)
+        if teacher.is_currently_scheduling():
+            await teacher.user.send("Please finish scheduling or wait for an evaluator's response before scheduling another.")
+            return
 
-        return True
-
-    @discord.ui.button(label='Schedule Evaluation', style=discord.ButtonStyle.blurple, custom_id='schedule_evaluation_button')
-    async def schedule(self, button, interaction):
-        teacher = Teacher(interaction.guild.get_member(interaction.user.id))
-        self.scheduling_now.append(interaction.user)
+        ScheduleCommand.scheduling_now.append(teacher)
 
         # indexes of each piece of information in evaluation_info
         COURSE = 0
@@ -296,7 +263,7 @@ class ScheduleView(discord.ui.View):
 
             if matched == "confirmed":
                 # converting user object, evaluator_available, to member object to access their .nick
-                for member in interaction.guild.members:
+                for member in ctx.guild.members:
                     if member.id == evaluator_available.id:
                         evaluator_available = member
                         break
@@ -332,24 +299,9 @@ class ScheduleView(discord.ui.View):
         if matched == "evaluators unavailable":
             await teacher.user.send(f"Try evaluating for another time of the day.")
 
-        self.scheduling_now.remove(interaction.user)
+        ScheduleCommand.scheduling_now.remove(teacher)
 
         return
-
-class ScheduleCommand(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
-
-    def sent_in_schedule_evaluation(ctx):
-        return ctx.channel.name == '📅schedule-evaluation📅'
-
-    @commands.command()
-    @commands.is_owner()
-    async def update_schedule_message(self, ctx):
-        msgs = await ctx.channel.history().flatten()
-        for msg in msgs:
-            await msg.delete()
-        await ctx.send('\u200b', view=ScheduleView(self.bot))
 
 def setup(bot):
     global instance 
