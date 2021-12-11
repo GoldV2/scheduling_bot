@@ -6,17 +6,19 @@ sql
 https://www.youtube.com/watch?v=pd-0G0MigUA
 
 ONLY USE RELOAD_COGS TO CHANGE SHIT WHEN THE BOT IS RUNNING
+ONLY TERMINATE BOT THROUGH COMMAND
 
 # HARD
 
+* use scheduling bot to select roles instead of other bots
 * Create member and evaluator classes in each file as needed
 * organize the code into functions
 
-* use buttons and dropdowns instead of reactions
 * Combine same language courses in the same embed
 * add more robusts checks and remove default !help message
 * find a way to not need to take guild in as a paremeter
 
 # EASY
 
+* update the server to reflect how the bot actually works
 * make the first announcement channel an actual announcement

@@ -155,22 +155,105 @@ class Teacher:
 
         return evaluation_info
 
-    async def is_available(self, evaluation_week_day, time):
-        async def add_checks(msg):
-            for emoji in Constants.check_emojis:
-                await msg.add_reaction(emoji)
-        
-        def available_check(reaction, user):
-            return (user == self.user
-                    and reaction.emoji in Constants.check_emojis
-                    and reaction.message == msg)
+class HourDropDown(discord.ui.Select):
+    def __init__(self, hours):
+    
+        self.my_options = []
 
-        msg = await self.user.send(f"Is {evaluation_week_day} at {time} a good time for you to be evaluated? React with the appropriate emoji to agree.")
-        
-        await add_checks(msg)
-        reaction, user = await instance.bot.wait_for('reaction_add', check=available_check)
+        for hour in hours:
+            self.my_options.append(discord.SelectOption(label=hour))
 
-        return reaction.emoji == '✅'
+        super().__init__(placeholder='Select an hour', min_values=1, max_values=1, options=self.my_options)
+
+    async def callback(self, interaction):
+        for item in self.view.children:
+            item.disabled = True
+
+        self.view.hour = self.values[0]
+
+        for option in self.my_options:
+            if option.label == self.values[0]:
+                option.default = True
+                break
+        
+        await interaction.response.edit_message(view=self.view)
+
+        self.view.stop()
+
+class HourView(discord.ui.View):
+    def __init__(self, period):
+        super().__init__(timeout=None)
+
+        self.add_item(HourDropDown(period))
+
+    @discord.ui.button(label='Cancel', style=discord.ButtonStyle.red)
+    async def cancel(self, button, interaction):
+        for item in self.children:
+            item.disabled = True
+
+        await interaction.response.edit_message(view=self)
+
+        self.hour = None
+
+        self.stop()
+
+class EvaluatorConfirmationView(discord.ui.View):
+    def __init__(self, evaluators_requested):
+        super().__init__(timeout=None)
+
+        self.evaluators_requested = evaluators_requested
+        self.evaluator_available = None
+    
+    # TODO checking for IDs, I'd rather check for the user instance itself
+    async def interaction_check(self, interaction):
+        return interaction.user.id in [user.id for user in self.evaluators_requested]
+
+    @discord.ui.button(label='No', style=discord.ButtonStyle.red)
+    async def no(self, button, interaction):
+        await interaction.response.defer()
+        await interaction.message.edit(content=interaction.message.content + '\n*You refused this evaluation request*')
+        for evaluator in self.evaluators_requested:
+            if evaluator.id == interaction.user.id:
+                self.evaluators_requested.remove(evaluator)
+                break
+
+        for item in self.children:
+            item.disabled = True
+        
+        await interaction.message.edit(view=self)
+
+        if not self.evaluators_requested:
+            self.stop()
+
+    @discord.ui.button(label='Yes', style=discord.ButtonStyle.green)
+    async def yes(self, button, interaction):
+        for item in self.children:
+            item.disabled = True
+
+        for evaluator in self.evaluators_requested:
+            if evaluator.id == interaction.user.id:
+                self.evaluators_requested.remove(evaluator)
+                break
+
+        await interaction.response.edit_message(view=self)
+
+        self.evaluator_available = interaction.user
+
+        self.stop()
+
+class TeacherCancelView(discord.ui.Select):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label='Cancel', style=discord.ButtonStyle.red)
+    async def cancel(self, button, interaction):
+        for item in self.view.children:
+            item.disabled = True
+
+        await interaction.response.edit_message(view=self)
+
+        self.canceled = True
+        self.stop()
 
 class ScheduleView(discord.ui.View):
     def __init__(self, bot):
@@ -193,6 +276,7 @@ class ScheduleView(discord.ui.View):
 
     @discord.ui.button(label='Schedule Evaluation', style=discord.ButtonStyle.blurple, custom_id='schedule_evaluation_button')
     async def schedule(self, button, interaction):
+        await interaction.response.defer()
         teacher = Teacher(interaction.guild.get_member(interaction.user.id))
         self.scheduling_now.append(interaction.user)
 
@@ -204,64 +288,6 @@ class ScheduleView(discord.ui.View):
         evaluation_info = await teacher.ask_evaluation_info()
 
         evaluators_available = Helpers.find_evaluator_availables(self.bot, evaluation_info)
-
-        #############################################################
-
-        async def send_request_to_evaluators(evaluators_available, teacher, evaluation_info):
-            async def add_checks(msg):
-                for emoji in Constants.check_emojis:
-                    await msg.add_reaction(emoji)
-            
-            evaluators_requested = []
-            evaluator_request_msgs = []
-            for evaluator in evaluators_available:
-                msg = await evaluator.send(f"Can you evaluate {teacher.user.nick} on {evaluation_info[COURSE]} coming {evaluation_info[DAY]} at {evaluation_info[HOUR]}?")
-                await add_checks(msg)
-                
-                evaluators_requested.append(evaluator)
-                evaluator_request_msgs.append(msg)
-
-            return evaluators_requested, evaluator_request_msgs
-
-        async def wait_for_confirmation(evaluators_requested, evaluator_request_msgs, evaluation_info):
-            def confirmation_check(reaction, user):
-                if reaction.message == confirmation_msg:
-                    return user == teacher.user and reaction.emoji == '🛑'
-
-                elif reaction.message in evaluator_request_msgs:
-                    return user in evaluators_available and reaction.emoji in Constants.check_emojis
-
-            async def send_msg_to_evaluators_requested(evaluators_requested, msg_content):
-                for evaluator_requested in evaluators_requested:
-                    await evaluator_requested.send(msg_content)
-
-            # continously waits for a reaction from the teacher or any evaluator
-            while evaluators_requested:
-                confirmation_reaction, evaluator_available = await self.bot.wait_for('reaction_add', check=confirmation_check)
-
-                if confirmation_reaction.emoji == '✅':
-                    evaluators_requested.remove(evaluator_available)
-                    
-                    accepted_by_another_evaluator_msg_content = f"The evaluation for {teacher.user.nick} on {evaluation_info[COURSE]} coming {evaluation_info[DAY]} at {evaluation_info[HOUR]} has been accepeted by another evaluator."
-                    await send_msg_to_evaluators_requested(evaluators_requested, accepted_by_another_evaluator_msg_content)
-                    
-                    return "confirmed", evaluator_available
-
-                elif confirmation_reaction.emoji == '🛑':
-                    print(f"{teacher.user.name} aka {teacher.user.nick} canceled an unconfirmed evaluation")
-
-                    canceled_by_teacher_msg_content = f"{teacher.user.nick} canceled their {evaluation_info[COURSE]} evaluation that was coming {evaluation_info[DAY]} at {evaluation_info[HOUR]}"
-                    await send_msg_to_evaluators_requested(evaluators_requested, canceled_by_teacher_msg_content)
-
-                    await teacher.user.send('Your evaluation request was canceled. Use the "!schedule" command again in the server to reschedule.')
-
-                    return "cancelled by teacher", None
-
-                else:
-                    evaluators_requested.remove(evaluator_available)
-
-            await teacher.user.send(f"Sorry, there are no {evaluation_info[COURSE]} evaluators available on {evaluation_info[DAY]} at {evaluation_info[HOUR]}.")
-            return "evaluators unavailable", None
 
         def find_evaluation_date(evaluation_info):
             hour = evaluation_info[HOUR]
@@ -276,65 +302,76 @@ class ScheduleView(discord.ui.View):
             return evaluation_date
 
         print(f"-----\n{teacher.user.nick} scheduled an evaluation.\nEvaluators: {[ev.name for ev in evaluators_available]}")
-        for hour in Constants.times_of_day[evaluation_info[PERIOD]]:
-            matched = False
+        hours = Constants.times_of_day[evaluation_info[PERIOD]].copy()
+        while hours:
+            hour_view = HourView(hours)
 
-            evaluation_info[HOUR] = hour
+            await teacher.user.send(f"Select the hour you'd like to be evaluated on.", view=hour_view)
+            await hour_view.wait()
+            hour = hour_view.hour
 
-            teacher_available = False
-            if await teacher.is_available(evaluation_info[DAY], evaluation_info[HOUR]):
-                teacher_available = True
+            if hour:
+                hours.remove(hour)
+                evaluation_info[HOUR] = hour
 
-                evaluators_requested, evaluator_request_msgs = await send_request_to_evaluators(evaluators_available,
-                                                                                            teacher,
-                                                                                            evaluation_info)
-                
-                confirmation_msg = await teacher.user.send(f'Your request was sent to all evaluators available. Please be patient, you will receive a confirmation message if an evaluator is available. React with the 🛑 to cancel.')
-                await confirmation_msg.add_reaction('🛑')
+                evaluation_confirmation_view = EvaluatorConfirmationView(evaluators_available.copy())
+                evaluator_requests_sent = []
+                for evaluator in evaluators_available:
+                    msg = await evaluator.send(f"Can you evaluate {teacher.user.nick} on {evaluation_info[COURSE]} coming {evaluation_info[DAY]} at {evaluation_info[HOUR]}?",
+                        view=evaluation_confirmation_view)
+                    evaluator_requests_sent.append((msg, evaluator))
 
-                matched, evaluator_available = await wait_for_confirmation(evaluators_requested, evaluator_request_msgs, evaluation_info)
+                await teacher.user.send(f'Your request was sent to all evaluators available. Please be patient, you will receive a confirmation message if an evaluator is available')
 
-            if matched == "confirmed":
-                # converting user object, evaluator_available, to member object to access their .nick
-                for member in interaction.guild.members:
-                    if member.id == evaluator_available.id:
-                        evaluator_available = member
-                        break
-    
-                evaluation_date = find_evaluation_date(evaluation_info)
+                await evaluation_confirmation_view.wait()
+                if evaluation_confirmation_view.evaluator_available:
+                    # for unanswered_eval in evaluation_confirmation_view.evaluators_requested:
+                    MSG = 0
+                    EVALUATOR = 1
+                    id_evaluators_requested = [e.id for e in evaluation_confirmation_view.evaluators_requested]
+                    for unanswered_request_message in evaluator_requests_sent:
+                        if unanswered_request_message[EVALUATOR].id in id_evaluators_requested:
+                            await unanswered_request_message[MSG].edit(content='*This evaluation was accepted by another evaluator.*', view=None)
 
-                evaluation = [f"{evaluator_available.name}#{evaluator_available.discriminator} AKA {evaluator_available.nick}",
-                                f"{teacher.user.name}#{teacher.user.discriminator} AKA {teacher.user.nick}",
-                                f"{evaluation_date.strftime('%m/%d/%Y %H:%M:%S')}",
-                                evaluation_info[COURSE],
-                                datetime.now().strftime('%m/%d/%Y %H:%M:%S')]
+                    evaluator_available = evaluation_confirmation_view.evaluator_available
+                    for member in interaction.guild.members:
+                        if member.id == evaluator_available.id:
+                            evaluator_available = member
+                            break
+        
+                    evaluation_date = find_evaluation_date(evaluation_info)
 
-                EvaluationSheet.append_confirmed_evaluation(evaluation)
+                    evaluation = [f"{evaluator_available.name}#{evaluator_available.discriminator} AKA {evaluator_available.nick}",
+                                    f"{teacher.user.name}#{teacher.user.discriminator} AKA {teacher.user.nick}",
+                                    f"{evaluation_date.strftime('%m/%d/%Y %H:%M:%S')}",
+                                    evaluation_info[COURSE],
+                                    datetime.now().strftime('%m/%d/%Y %H:%M:%S')]
 
-                # adding this evaluation to the database of evaluator and teacher
-                DB.add_evaluation(evaluator_available.id, '$'.join(evaluation))
-                DB.add_evaluation(teacher.user.id, '$'.join(evaluation))
+                    EvaluationSheet.append_confirmed_evaluation(evaluation)
 
-                await Helpers.give_role(self.bot, teacher.user, "Pending Evaluation")
+                    # adding this evaluation to the database of evaluator and teacher
+                    DB.add_evaluation(evaluator_available.id, '$'.join(evaluation))
+                    DB.add_evaluation(teacher.user.id, '$'.join(evaluation))
 
-                await teacher.user.send(f"Evaluation confirmed! Take note of day and time, {evaluation_date.month}/{evaluation_date.day} at {evaluation_info[HOUR]}. Say hi to your evaluator on Discord by adding them, {evaluator_available.name}#{evaluator_available.discriminator}")
-                await evaluator_available.send(f"Evaluation confirmed! Take note of day and time, {evaluation_date.month}/{evaluation_date.day} at {evaluation_info[HOUR]}. Say hi to the teacher you will evaluate on Discord by adding them, {teacher.user.name}#{teacher.user.discriminator}")
+                    await Helpers.give_role(self.bot, teacher.user, "Pending Evaluation")
 
-                print(f"Evaluation confirmed: {evaluation}")
+                    await teacher.user.send(f"Evaluation confirmed! Take note of day and time, {evaluation_date.month}/{evaluation_date.day} at {evaluation_info[HOUR]}. Say hi to your evaluator on Discord by adding them, {evaluator_available.name}#{evaluator_available.discriminator}")
+                    await evaluator_available.send(f"Evaluation confirmed! Take note of day and time, {evaluation_date.month}/{evaluation_date.day} at {evaluation_info[HOUR]}. Say hi to the teacher you will evaluate on Discord by adding them, {teacher.user.name}#{teacher.user.discriminator}")
+
+                    print(f"Evaluation confirmed: {evaluation}")
+                    break
+
+                else:
+                    await teacher.user.send("All evaluators refused your request.")
+
+            else:
+                await teacher.user.send('Evaluation scheduling process canceled.')
                 break
 
-            elif matched == "cancelled by teacher":
-                break
-
-        if not teacher_available:
-            await teacher.user.send(f"These are the only hours available during the {evaluation_info[PERIOD]}. If none are good for you, try evaluation for another day or another period of the day.")
-    
-        if matched == "evaluators unavailable":
-            await teacher.user.send(f"Try evaluating for another time of the day.")
+            if not hours:
+                await teacher.user.send('Sorry, there are no evaluators available.')
 
         self.scheduling_now.remove(interaction.user)
-
-        return
 
 class ScheduleCommand(commands.Cog):
     def __init__(self, bot):

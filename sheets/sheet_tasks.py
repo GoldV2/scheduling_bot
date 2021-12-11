@@ -16,7 +16,7 @@ class SheetTasks(commands.Cog):
         completed_evaluations, to_delete = EvaluationSheet.find_completed_evaluations()
         if completed_evaluations:
             for evaluation in completed_evaluations:
-                DB.c.execute("SELECT * FROM members WHERE evaluations LIKE ?", (f"%{'$'.join(evaluation[:-2])}%",))
+                DB.c.execute("SELECT * FROM members WHERE evaluations LIKE ? AND is_evaluator=?", (f"%{'$'.join(evaluation[:-2])}%", 0,))
                 teacher = DB.c.fetchone()
                 
                 member = self.bot.guilds[0].get_member(int(teacher[0]))
@@ -28,9 +28,9 @@ class SheetTasks(commands.Cog):
                 teacher = DB.fetch_one(teacher[0])
 
                 if not teacher[2]:
-                    await Helpers.remove_role(self.bot, member, 'Pending Evaluation')
+                    await Helpers.remove_role(member, 'Pending Evaluation')
 
-                DB.c.execute("SELECT * FROM members WHERE evaluations LIKE ?", (f"%{'$'.join(evaluation[:-2])}%",))
+                DB.c.execute("SELECT * FROM members WHERE evaluations LIKE ? AND is_evaluator=?", (f"%{'$'.join(evaluation[:-2])}%", 1,))
                 evaluator = DB.c.fetchone()
 
                 DB.remove_evaluation(evaluator[0], evaluation[:-2])
@@ -43,21 +43,19 @@ class SheetTasks(commands.Cog):
             for evaluation in canceled_evaluations:
                 await Helpers.evaluation_canceled_warning(self.bot, evaluation)
 
-                DB.c.execute("SELECT * FROM members WHERE evaluations LIKE ?", (f"%{'$'.join(evaluation[:-3])}%",))
+                DB.c.execute("SELECT * FROM members WHERE evaluations LIKE ? AND is_evaluator=?", (f"%{'$'.join(evaluation[:-3])}%",0,))
                 teacher = DB.c.fetchone()
 
                 DB.remove_evaluation(teacher[0], evaluation[:-3])
 
-                DB.c.execute("SELECT * FROM members WHERE id=?", (teacher[0],))
+                DB.c.execute("SELECT * FROM members WHERE id=? AND is_evaluator=?", (teacher[0],0,))
                 teacher = DB.c.fetchone()
 
                 member = self.bot.guilds[0].get_member(int(teacher[0]))
                 if not teacher[2]:
-                    print('Passed the teacher 2 if statement')
-                    await Helpers.remove_role(self.bot, member, 'Pending Evaluation')
-                    print('Pending evaluation remove')
+                    await Helpers.remove_role(member, 'Pending Evaluation')
 
-                DB.c.execute("SELECT * FROM members WHERE evaluations LIKE ?", (f"%{'$'.join(evaluation[:-3])}%",))
+                DB.c.execute("SELECT * FROM members WHERE evaluations LIKE ? AND is_evaluator=?", (f"%{'$'.join(evaluation[:-3])}%",1,))
                 evaluator = DB.c.fetchone()
 
                 DB.remove_evaluation(evaluator[0], evaluation[:-3])

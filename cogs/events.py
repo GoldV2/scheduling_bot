@@ -1,5 +1,6 @@
 from textwrap import dedent
 
+import discord
 from discord.channel import DMChannel
 from discord.ext import commands
 
@@ -70,8 +71,12 @@ class Events(commands.Cog):
     async def on_ready(self):
         self.bot.add_view(ProfileView(self.bot))
         self.bot.add_view(ScheduleView(self.bot))
-        print("Bot connected successfully!")
 
+        for channel in self.bot.guilds[0].channels:
+            if 'Bot Status:' in channel.name:
+                break
+        
+        await channel.edit(name='Bot Status: Online')
 
 def setup(bot):
     bot.add_cog(Events(bot))

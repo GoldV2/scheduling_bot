@@ -22,8 +22,6 @@ class ManagerCommands(commands.Cog):
         member = ctx.guild.get_member(int(member_id))
         await Events.on_member_remove(member)
 
-        await Helpers.update_evaluator_availability_message(self.bot)
-
     @commands.command()
     @commands.check(manager_command_check)
     async def update_database_sheet(self, ctx):
@@ -55,6 +53,16 @@ class ManagerCommands(commands.Cog):
     @commands.is_owner()
     async def clear_evaluations(self, ctx, member_id):
         DB.remove_evaluations(int(member_id))
-        
+
+    @commands.command()
+    @commands.is_owner()
+    async def close_bot(self, ctx):
+        for channel in self.bot.guilds[0].channels:
+            if 'Bot Status:' in channel.name:
+                break
+
+        await channel.edit(name='Bot Status: Offline')
+        await self.bot.close()
+
 def setup(bot):
     bot.add_cog(ManagerCommands(bot))

@@ -64,7 +64,6 @@ class AvailabilityButton(discord.ui.Button):
 
         else:
             current = view.availability[dropdown.values[0]].split(' and ')
-            print(current)
             current.remove(self.time_of_day)  
             view.availability[dropdown.values[0]] = ' and '.join(current)
             self.style = discord.ButtonStyle.gray
@@ -171,6 +170,7 @@ class ProfileView(discord.ui.View):
 
     @discord.ui.button(label='Update Availability', style=discord.ButtonStyle.gray, custom_id='update_availability_button')
     async def update_availability(self, button, interaction):
+        await interaction.response.defer()
         member = Member(None, interaction.user)
         evaluator = member.member
 
@@ -179,13 +179,12 @@ class ProfileView(discord.ui.View):
         availability = await member.ask_availability()
         DB.update_evaluator_availability(evaluator.id, availability)
 
-        await Helpers.update_evaluator_availability_message(self.bot)
-
         self.updating_now.remove(evaluator)
         await interaction.user.send("Successfully set availability!")
 
     @discord.ui.button(label='Update Courses', style=discord.ButtonStyle.gray, custom_id='update_courses_button')
     async def update_courses(self, button, interaction):
+        await interaction.response.defer()
         member = Member(None, interaction.user)
         evaluator = member.member
 
@@ -193,8 +192,6 @@ class ProfileView(discord.ui.View):
 
         courses = await member.ask_courses()
         DB.update_evaluator_courses(evaluator.id, courses)
-
-        await Helpers.update_evaluator_availability_message(self.bot)
 
         self.updating_now.remove(evaluator)
         await interaction.user.send("Successfully set courses!")
@@ -229,11 +226,10 @@ class Member:
         return view.courses
 
     async def become_evaluator(self):
-        await Helpers.remove_role(self.bot, self.member, 'Evaluator')
+        await Helpers.remove_role(self.member, 'Evaluator')
         
         available = await self.ask_availability()
         courses = await self.ask_courses()
-        await Helpers.update_evaluator_availability_message(self.bot)
         await Helpers.give_role(self.bot, self.member, 'Evaluator')
 
         DB.add_evaluator(self.member.id, available, courses)
@@ -255,7 +251,7 @@ class EvaluatorCommands(commands.Cog):
               and after not in self.becoming_evaluator):
 
             if not member.is_in_db():
-                await Helpers.remove_role(self.bot, member.member, 'Evaluator')
+                await Helpers.remove_role(member.member, 'Evaluator')
                 assert member.is_in_db(), f'{member.member.name}#{member.member.discriminator} not in DB, edit name first.'
 
             self.becoming_evaluator.append(after)
@@ -268,8 +264,6 @@ class EvaluatorCommands(commands.Cog):
 
             DB.remove_evaluator(after.id)
     
-            await Helpers.update_evaluator_availability_message(self.bot)
-
     @commands.command()
     @commands.is_owner()
     async def update_profile_message(self, ctx):

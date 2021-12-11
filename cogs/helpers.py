@@ -3,7 +3,7 @@ from datetime import timedelta
 
 from discord import Embed, Colour
 from discord.utils import get
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 from db.db_management import DB
 from cogs.constants import Constants
@@ -33,8 +33,8 @@ class Helpers(commands.Cog):
     #####################################################################
 
     @staticmethod    
-    async def remove_role(bot, member, name):
-        role = get(bot.guilds[0].roles, name=name)
+    async def remove_role(member, name):
+        role = get(member.guild.roles, name=name)
         await member.remove_roles(role)
 
     @staticmethod
@@ -92,6 +92,7 @@ class Helpers(commands.Cog):
         return sorted_evaluator_avais
 
     @staticmethod
+    @tasks.loop(minutes=10)
     async def update_evaluator_availability_message(bot):
         evaluator_avais = Helpers.get_evaluator_availabilities()
         for channel in bot.guilds[0].channels:
