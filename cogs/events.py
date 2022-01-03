@@ -51,9 +51,13 @@ class Events(commands.Cog):
     async def on_member_remove(member):
         DB.remove_member(member.id)
 
-        for role in member.roles:
-            if role.name != "@everyone" and role.name != "Manager":
-                await member.remove_roles(role)
+        try:
+            for role in member.roles:
+                if role.name != "@everyone" and role.name != "Manager":
+                    await member.remove_roles(role)
+
+        except:
+            print(member.nick, member.name, "left the server.")
 
     @commands.Cog.listener('on_member_update')
     async def update_member_nick(self, before, after):
