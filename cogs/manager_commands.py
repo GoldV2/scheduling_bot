@@ -27,10 +27,11 @@ class ManagerCommands(commands.Cog):
     async def update_database_sheet(self, ctx):
         await SheetTasks.update_database_sheet()
 
+    # TODO update_evaluation_sheet is not a staticmethod anymore, doing weird thing to get it to work
     @commands.command()
     @commands.check(manager_command_check)
     async def update_evaluation_sheet(self, ctx):
-        SheetTasks.update_evaluation_sheet()
+        await SheetTasks.update_evaluation_sheet(self)
 
     @commands.command()
     @commands.is_owner()

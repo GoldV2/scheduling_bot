@@ -238,7 +238,6 @@ class Member:
 class EvaluatorCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.updating_now = []
         self.becoming_evaluator = []
 
     @commands.Cog.listener('on_member_update')
