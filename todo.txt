@@ -8,6 +8,8 @@ https://www.youtube.com/watch?v=pd-0G0MigUA
 ONLY USE RELOAD_COGS TO CHANGE SHIT WHEN THE BOT IS RUNNING
 ONLY TERMINATE BOT THROUGH COMMAND
 
+REDO THE ENVIRONMENT AND REQUIREMENTS
+
 # HARD
 
 * use scheduling bot to select roles instead of other bots
@@ -21,4 +23,6 @@ ONLY TERMINATE BOT THROUGH COMMAND
 # EASY
 
 * update the server to reflect how the bot actually works
-* make the first announcement channel an actual announcement
+* make the first announcement channel an actual announcement channel
+* show EST times everywhere
+* way to send dms to all evaluators
