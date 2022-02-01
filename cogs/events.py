@@ -3,6 +3,7 @@ from textwrap import dedent
 import discord
 from discord.channel import DMChannel
 from discord.ext import commands
+from cogs.email import Email
 
 from db.db_management import DB
 from cogs.helpers import Helpers
@@ -43,12 +44,6 @@ class Events(commands.Cog):
             await message.author.edit(nick=message.content)
             await message.delete()
 
-            # TODO create a function that finds channel names
-            # TODO store channel IDs in the database
-            for channel in message.guild.channels:
-                if channel.name == 'warnings':
-                    await channel.send(f"{message.author.nick} joined us.")
-
         print("Message sent by", message.author.name)
         print("-", message.content)
 
@@ -65,6 +60,8 @@ class Events(commands.Cog):
         except:
             print(member.nick, member.name, "left the server.")
 
+        Email.send("Member Left", f"{member.name} left the Training Server.")
+
     @commands.Cog.listener('on_member_update')
     async def update_member_nick(self, before, after):
         member = Member(self.bot, after)
@@ -76,6 +73,7 @@ class Events(commands.Cog):
             else:
                 DB.add_member(after.id, after.nick)
                 await Helpers.give_role(self.bot, after, 'New Teacher')
+                Email.send("Member Added to DB", f"{after.name} renamed themselves to {after.nick} and was added to the database.")
 
     @commands.Cog.listener()
     async def on_ready(self):
