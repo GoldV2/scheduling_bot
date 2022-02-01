@@ -79,12 +79,6 @@ class Helpers(commands.Cog):
         for channel in bot.guilds[0].channels:
             if channel.name == 'evaluator-availability':
                 break
-        
-        # it writes one message, message goes over 2k characters
-        # msg = (await channel.history(limit=1).flatten())[0]
-        # if not msg:
-        #     channel.send('')
-        #     msg = (await channel.history(limit=1).flatten())[0]
 
         # limit should only be about 11, because there are onle 11 courses I believe, or 10...
         embeds = []
@@ -114,26 +108,6 @@ class Helpers(commands.Cog):
         for i, msg in enumerate(msgs[::-1]):
             await msg.edit(embed=embeds[i])
 
-        
-        # messages = []
-        
-        # for course in evaluator_avais:
-        #     content = ''
-        #     content += f"\n**{course}**\n"
-        #     for day in evaluator_avais[course]:
-        #         day_content = f"> {day}\n"
-        #         for time_of_day in evaluator_avais[course][day]:
-        #             day_content += f"\t\t{time_of_day}: {evaluator_avais[course][day][time_of_day]} {'evaluator' if evaluator_avais[course][day][time_of_day] == 1 else 'evaluators'}\n"
-
-        #         content += f"{day_content[:-1]}\n"
-
-        #     messages.append(content)
-
-
-        # if messages:
-        #     for message in messages:
-        #         await channel.send(content=message)
-
     @staticmethod
     def find_evaluator_availables(bot, evaluation_info):
         COURSE = 0
@@ -161,6 +135,7 @@ class Helpers(commands.Cog):
     #####################################################################
 
     # every time an evaluation is cancelled, send a message to the "warnings" channel in Discord
+    # and a message to the evaluator
     async def evaluation_canceled_warning(bot, evaluation):
         for channel in bot.guilds[0].channels:
             if channel.name == 'warnings':
@@ -175,7 +150,17 @@ class Helpers(commands.Cog):
                             Course: {evaluation[3]}
                             Evaluation Confirmation Time: {evaluation[4]}"""))
 
+        evaluator = Helpers.get_member(bot.guilds[0], evaluation[0])
+        evaluator.send(f"Hello, this is a warning message! An evaluation you were supposed to complete on {evaluation[2]} on {evaluation[3]} for {evaluation[1]} was marked as incomplete by me because it was never marked as complete. Please contact a Manager immediately!")
 
+    def get_member(guild, info: str):
+        discord_info, nickname = info.split(' AKA ')
+        discord_name, discriminator = discord_info.split('#')
+        for member in guild.members:
+            if (member.nick == nickname 
+                and member.discriminator == discriminator):
+
+                return member
 
     # find_next_weekday
     def next_weekday(d, weekday):
