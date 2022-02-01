@@ -26,3 +26,5 @@ REDO THE ENVIRONMENT AND REQUIREMENTS
 * make the first announcement channel an actual announcement channel
 * show EST times everywhere
 * way to send dms to all evaluators
+
+STOP USING bot.guilds
