@@ -47,7 +47,7 @@ class Events(commands.Cog):
             # TODO store channel IDs in the database
             for channel in message.guild:
                 if channel.name == 'warnings':
-                    channel.send(f"{message.author.nick} joined us.")
+                    await channel.send(f"{message.author.nick} joined us.")
 
         print("Message sent by", message.author.name)
         print("-", message.content)

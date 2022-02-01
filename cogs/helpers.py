@@ -151,7 +151,7 @@ class Helpers(commands.Cog):
                             Evaluation Confirmation Time: {evaluation[4]}"""))
 
         evaluator = Helpers.get_member(bot.guilds[0], evaluation[0])
-        evaluator.send(f"Hello, this is a warning message! An evaluation you were supposed to complete on {evaluation[2]} on {evaluation[3]} for {evaluation[1]} was marked as incomplete by me because it was never marked as complete. Please contact a Manager immediately!")
+        await evaluator.send(f"Hello, this is a warning message! An evaluation you were supposed to complete on {evaluation[2]} on {evaluation[3]} for {evaluation[1]} was marked as incomplete by me because it was never marked as complete. Please contact a Manager immediately!")
 
     def get_member(guild, info: str):
         discord_info, nickname = info.split(' AKA ')

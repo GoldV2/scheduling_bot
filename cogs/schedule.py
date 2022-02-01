@@ -314,7 +314,7 @@ class ScheduleView(discord.ui.View):
 
         for warning_channel in self.bot.guilds[0]:
             if warning_channel.name == 'warnings':
-                warning_channel.send(f"Teacher {teacher.user.nick} scheduled an evaluation.\nEvaluators: {', '.join([ev.name for ev in evaluators_available])}")
+                await warning_channel.send(f"Teacher {teacher.user.nick} scheduled an evaluation.\nEvaluators: {', '.join([ev.name for ev in evaluators_available])}")
                 break
 
         hours = Constants.times_of_day[evaluation_info[PERIOD]].copy()
@@ -399,7 +399,7 @@ class ScheduleView(discord.ui.View):
                         for warning_channel in self.bot.guilds[0]:
                             if warning_channel.name == 'warnings':
                                 n = '\n'
-                                warning_channel.send(f'Evaluation confirmed.\nInformation: {n.join(evaluation)}')
+                                await warning_channel.send(f'Evaluation confirmed.\nInformation: {n.join(evaluation)}')
                                 break
 
                         break
