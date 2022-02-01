@@ -16,43 +16,6 @@ bot = commands.Bot(command_prefix=commands.when_mentioned_or('!'),
 async def globally_block_dms(ctx):
     return ctx.guild is not None
 
-# @bot.event
-# async def on_error(event, *args, **kwargs):
-#     for channel in bot.guilds[0].channels:
-#         if channel.name == 'warnings':
-#             break
-
-#     type, value, tb = sys.exc_info()
-#     tb_string = traceback.format_tb(tb)
-
-#     member = args[0]
-#     author = member.name + "#" + member.discriminator
-#     embed = Embed(title=value, description=f"Event: {event}\nType: {str(type)}\nBy: {author}")
-#     for part, line in enumerate(tb_string):
-#         embed.add_field(name=part, value=line, inline=False)
-
-#     await channel.send('@Manager', embed=embed)
-
-# @bot.event
-# async def on_command_error(context, exception):
-#     for channel in bot.guilds[0].channels:
-#         if channel.name == 'warnings':
-#             break
-
-#     print(context, 'context')
-#     print(exception, 'exception')
-#     print(type(exception), 'type of exception')
-
-#     type, value, tb = sys.exc_info()
-#     tb_string = traceback.format_tb(tb)
-
-#     author = context.author.name + "#" + context.author.discriminator
-#     embed = Embed(title=value, description=f"Event: {exception}\nType: {str(type)}\nBy: {author}")
-#     for part, line in enumerate(tb_string):
-#         embed.add_field(name=part, value=line, inline=False)
-
-#     await channel.send('@Manager', embed=embed)
-
 path = os.path.dirname(os.path.realpath(__file__))
 if path not in sys.path:
     sys.path.insert(1, path)
