@@ -43,6 +43,12 @@ class Events(commands.Cog):
             await message.author.edit(nick=message.content)
             await message.delete()
 
+            # TODO create a function that finds channel names
+            # TODO store channel IDs in the database
+            for channel in message.guild:
+                if channel.name == 'warnings':
+                    channel.send(f"{message.author.nick} joined us.")
+
         print("Message sent by", message.author.name)
         print("-", message.content)
 
