@@ -9,8 +9,7 @@ from discord.ext import commands
 class Email(commands.Cog):
     
     FROM = 'rafaelpbcp@gmail.com'
-    TO = 'office@aigolearning.org'
-    TO2 = 'rafaela@aigolearning.org'
+    TO = ['office@aigolearning.org', 'rafaela@aigolearning.org']
 
     @staticmethod
     def send(subject: str, content: str) -> None:
@@ -20,16 +19,13 @@ class Email(commands.Cog):
         s.login(Email.FROM, 'rvljmowvcjphtzez')
         
         msg = EmailMessage()
-        msg.set_content(content + "\n\nFrom the Scheduling Bot")
+        msg.set_content(content + "\n\nThis email is from the Scheduling Bot")
 
         msg['Subject'] = subject
         msg['From'] = Email.FROM
-
-        # msg['To'] = Email.TO
-        # s.send_message(msg)
-        
-        msg['To'] = Email.TO2
-        s.send_message(msg)
+        for recipient in Email.TO:
+            msg['To'] = recipient
+            s.send_message(msg)
         
         s.quit()
 
