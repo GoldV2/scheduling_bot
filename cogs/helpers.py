@@ -4,6 +4,7 @@ from datetime import timedelta
 from discord import Embed, Colour
 from discord.utils import get
 from discord.ext import commands, tasks
+from cogs.email import Email
 
 from db.db_management import DB
 from cogs.constants import Constants
@@ -134,21 +135,15 @@ class Helpers(commands.Cog):
 
     #####################################################################
 
-    # every time an evaluation is cancelled, send a message to the "warnings" channel in Discord
-    # and a message to the evaluator
     async def evaluation_canceled_warning(bot, evaluation):
-        for channel in bot.guilds[0].channels:
-            if channel.name == 'warnings':
-                break
-
-        await channel.send(dedent(f"""
-                            Evaluation Canceled
-                            Reason: {evaluation[7]}
-                            Evaluator: {evaluation[0]}
-                            Teacher: {evaluation[1]}
-                            Evaluation Time: {evaluation[2]}
-                            Course: {evaluation[3]}
-                            Evaluation Confirmation Time: {evaluation[4]}"""))
+        Email.send('Evaluatoin Canceled',
+            dedent(f"""
+                    Reason: {evaluation[7]}
+                    Evaluator: {evaluation[0]}
+                    Teacher: {evaluation[1]}
+                    Evaluation Time: {evaluation[2]}
+                    Course: {evaluation[3]}
+                    Evaluation Confirmation Time: {evaluation[4]}"""))
 
         evaluator = Helpers.get_member(bot.guilds[0], evaluation[0])
         await evaluator.send(f"Hello, this is a warning message! An evaluation you were supposed to complete on {evaluation[2]} on {evaluation[3]} for {evaluation[1]} was marked as incomplete by me because it was never marked as complete. Please contact a Manager immediately!")
