@@ -2,12 +2,12 @@ import discord
 from discord.ext import commands
 from datetime import datetime
 import asyncio
-from cogs.email import Email
 
 from sheets.evaluation_sheet_management import EvaluationSheet
 from db.db_management import DB
 from cogs.helpers import Helpers
 from cogs.constants import Constants
+from cogs.email import Email
 
 # TODO refactor this so these classes aren't so repetitive
 class CourseDropDown(discord.ui.Select):
@@ -313,8 +313,8 @@ class ScheduleView(discord.ui.View):
 
             return evaluation_date
 
-        Email.send("Evaluation Scheduled",
-            f"Teacher {teacher.user.nick} scheduled an evaluation.\nEvaluators Notified: {', '.join([ev.name for ev in evaluators_available])}\n\nThis does not mean the evalution was confirmed.")
+        Email.send("Evaluation Scheduling Process Started",
+            f"""Teacher {teacher.user.nick} began scheduling an evaluation.\nEvaluators Notified: {', '.join([f"{ev.name}#{ev.discriminator} AKA {ev.nick}" for ev in evaluators_available])}\n\nThis does not mean the evalution was confirmed.""")
 
         hours = Constants.times_of_day[evaluation_info[PERIOD]].copy()
         while hours:
@@ -394,11 +394,6 @@ class ScheduleView(discord.ui.View):
 
                         await teacher.user.send(f"Evaluation confirmed! Take note of day and time, {evaluation_date.month}/{evaluation_date.day} at {evaluation_info[HOUR]}. Say hi to your evaluator on Discord by adding them, {evaluator_available.name}#{evaluator_available.discriminator}")
                         await evaluator_available.send(f"*DO NOT FORGET TO MARK YOUR EVALUATION AS COMPLETE ON THE SHEET*\n> https://docs.google.com/spreadsheets/d/1tgxIUaQHZHo26eA22klbtemsSReQugu3YBVToR3J2bQ\nEvaluation confirmed! Take note of day and time, {evaluation_date.month}/{evaluation_date.day} at {evaluation_info[HOUR]}. Say hi to the teacher you will evaluate on Discord by adding them, {teacher.user.name}#{teacher.user.discriminator}")
-
-                        n = '\n'
-                        info_order = ['Evaluator Name', 'Teacher Name', 'Evaluation Time', 'Course', 'Evaluation Confirmation Time']
-                        Email.send("Evaluation Confirmed",
-                            f'Evaluation confirmed.\nInformation\n{[f"{it}: {iv}" for it, iv in zip(info_order, evaluation)]}')
 
                         break
 

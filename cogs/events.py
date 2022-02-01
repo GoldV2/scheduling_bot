@@ -3,12 +3,12 @@ from textwrap import dedent
 import discord
 from discord.channel import DMChannel
 from discord.ext import commands
-from cogs.email import Email
 
 from db.db_management import DB
 from cogs.helpers import Helpers
 from cogs.evaluator_commands import ProfileView
 from cogs.schedule import ScheduleView
+from cogs.email import Email
 
 class Member:
     def __init__(self, bot, member):
