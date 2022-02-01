@@ -399,7 +399,7 @@ class ScheduleView(discord.ui.View):
                         for warning_channel in self.bot.guilds[0].channels:
                             if warning_channel.name == 'warnings':
                                 n = '\n'
-                                await warning_channel.send(f'Evaluation confirmed.\nInformation: {n.join(evaluation)}')
+                                await warning_channel.send(f'Evaluation confirmed.\n*Information*\n{n.join(evaluation)}')
                                 break
 
                         break
