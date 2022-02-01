@@ -312,7 +312,7 @@ class ScheduleView(discord.ui.View):
 
             return evaluation_date
 
-        for warning_channel in self.bot.guilds[0]:
+        for warning_channel in self.bot.guilds[0].channels:
             if warning_channel.name == 'warnings':
                 await warning_channel.send(f"Teacher {teacher.user.nick} scheduled an evaluation.\nEvaluators: {', '.join([ev.name for ev in evaluators_available])}")
                 break
@@ -396,7 +396,7 @@ class ScheduleView(discord.ui.View):
                         await teacher.user.send(f"Evaluation confirmed! Take note of day and time, {evaluation_date.month}/{evaluation_date.day} at {evaluation_info[HOUR]}. Say hi to your evaluator on Discord by adding them, {evaluator_available.name}#{evaluator_available.discriminator}")
                         await evaluator_available.send(f"*DO NOT FORGET TO MARK YOUR EVALUATION AS COMPLETE ON THE SHEET*\n> https://docs.google.com/spreadsheets/d/1tgxIUaQHZHo26eA22klbtemsSReQugu3YBVToR3J2bQ\nEvaluation confirmed! Take note of day and time, {evaluation_date.month}/{evaluation_date.day} at {evaluation_info[HOUR]}. Say hi to the teacher you will evaluate on Discord by adding them, {teacher.user.name}#{teacher.user.discriminator}")
 
-                        for warning_channel in self.bot.guilds[0]:
+                        for warning_channel in self.bot.guilds[0].channels:
                             if warning_channel.name == 'warnings':
                                 n = '\n'
                                 await warning_channel.send(f'Evaluation confirmed.\nInformation: {n.join(evaluation)}')
