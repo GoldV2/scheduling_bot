@@ -135,19 +135,6 @@ class Helpers(commands.Cog):
 
     #####################################################################
 
-    async def evaluation_canceled_warning(bot, evaluation):
-        Email.send('Evaluatoin Canceled',
-            dedent(f"""
-                    Reason: {evaluation[7]}
-                    Evaluator: {evaluation[0]}
-                    Teacher: {evaluation[1]}
-                    Evaluation Time: {evaluation[2]}
-                    Course: {evaluation[3]}
-                    Evaluation Confirmation Time: {evaluation[4]}"""))
-
-        evaluator = Helpers.get_member(bot.guilds[0], evaluation[0])
-        await evaluator.send(f"Hello, this is a warning message! An evaluation you were supposed to complete on {evaluation[2]} on {evaluation[3]} for {evaluation[1]} was marked as incomplete by me because it was never marked as complete. Please contact a Manager immediately!")
-
     def get_member(guild, info: str):
         discord_info, nickname = info.split(' AKA ')
         discord_name, discriminator = discord_info.split('#')
