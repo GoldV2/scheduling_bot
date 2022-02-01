@@ -1,9 +1,13 @@
+import os
 from datetime import datetime, timedelta
 
-from discord.ext import commands
 from google.oauth2 import service_account
 import gspread
-import os
+
+from discord.ext import commands
+
+from cogs.constants import Constants
+from cogs.email import Email
 
 class EvaluationSheet(commands.Cog):
     path = os.path.dirname(os.path.realpath(__file__))
@@ -61,8 +65,12 @@ class EvaluationSheet(commands.Cog):
                     "range": {"sheetId": sheetId, "startRowIndex": 1, "endRowIndex": 100, "startColumnIndex": 6, "endColumnIndex": 7},
                     "fields": "dataValidation"
                     }})
-
+        
         EvaluationSheet.spreadsheet.batch_update(requests)
+
+        n = '\n'
+        Email.send("Evaluation Confirmed",
+            f'Evaluation confirmed and added to the sheet.\n\nSheet link: https://docs.google.com/spreadsheets/d/1tgxIUaQHZHo26eA22klbtemsSReQugu3YBVToR3J2bQ\n\nInformation\n{n.join([f"{it}: {iv}" for it, iv in zip(Constants.info_order, values)])}')
 
     @staticmethod
     def find_completed_evaluations():
