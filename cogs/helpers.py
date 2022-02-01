@@ -13,25 +13,6 @@ class Helpers(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @staticmethod
-    async def add_availability_emojis(msg):
-        for emoji in Constants.emoji_time_of_day:
-            await msg.add_reaction(emoji)
-
-        await msg.add_reaction('👍')
-
-    @staticmethod
-    async def add_course_availability_emojis(msg):
-        await Helpers.add_course_emojis(msg)
-        await msg.add_reaction('👍')
-
-    @staticmethod
-    async def add_course_emojis(msg):
-        for emoji in Constants.emoji_courses:
-            await msg.add_reaction(emoji)
-
-    #####################################################################
-
     @staticmethod    
     async def remove_role(member, name):
         role = get(member.guild.roles, name=name)
@@ -184,6 +165,7 @@ class Helpers(commands.Cog):
         for channel in bot.guilds[0].channels:
             if channel.name == 'warnings':
                 break
+
         await channel.send(dedent(f"""
                             Evaluation Canceled
                             Reason: {evaluation[7]}
@@ -192,6 +174,8 @@ class Helpers(commands.Cog):
                             Evaluation Time: {evaluation[2]}
                             Course: {evaluation[3]}
                             Evaluation Confirmation Time: {evaluation[4]}"""))
+
+
 
     # find_next_weekday
     def next_weekday(d, weekday):
