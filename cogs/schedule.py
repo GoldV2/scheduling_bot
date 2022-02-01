@@ -312,7 +312,11 @@ class ScheduleView(discord.ui.View):
 
             return evaluation_date
 
-        print(f"-----\n{teacher.user.nick} scheduled an evaluation.\nEvaluators: {[ev.name for ev in evaluators_available]}")
+        for warning_channel in self.bot.guilds[0]:
+            if warning_channel.name == 'warnings':
+                warning_channel.send(f"Teacher {teacher.user.nick} scheduled an evaluation.\nEvaluators: {', '.join([ev.name for ev in evaluators_available])}")
+                break
+
         hours = Constants.times_of_day[evaluation_info[PERIOD]].copy()
         while hours:
             hour_view = HourView(hours)
@@ -392,7 +396,12 @@ class ScheduleView(discord.ui.View):
                         await teacher.user.send(f"Evaluation confirmed! Take note of day and time, {evaluation_date.month}/{evaluation_date.day} at {evaluation_info[HOUR]}. Say hi to your evaluator on Discord by adding them, {evaluator_available.name}#{evaluator_available.discriminator}")
                         await evaluator_available.send(f"Evaluation confirmed! Take note of day and time, {evaluation_date.month}/{evaluation_date.day} at {evaluation_info[HOUR]}. Say hi to the teacher you will evaluate on Discord by adding them, {teacher.user.name}#{teacher.user.discriminator}")
 
-                        print(f"Evaluation confirmed: {evaluation}")
+                        for warning_channel in self.bot.guilds[0]:
+                            if warning_channel.name == 'warnings':
+                                n = '\n'
+                                warning_channel.send(f'Evaluation confirmed.\nInformation: {n.join(evaluation)}')
+                                break
+
                         break
 
                     else:
