@@ -2,6 +2,8 @@ from discord.ext import commands
 
 class Constants(commands.Cog):
     
+    info_order = ['Evaluator Name', 'Teacher Name', 'Evaluation Time', 'Course', 'Evaluation Confirmation Time']
+
     week_days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
     day_emojis = {'Monday': '1️⃣', 'Tuesday': '2️⃣', 'Wednesday': '3️⃣', 'Thursday': '4️⃣', 'Friday': '5️⃣', 'Saturday': '6️⃣', 'Sunday': '7️⃣'}
     # reversing the dictionary "day_emojis"
