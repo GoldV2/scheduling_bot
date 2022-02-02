@@ -11,6 +11,9 @@ class Email(commands.Cog):
     FROM = 'rafaelpbcp@gmail.com'
     TO = ['office@aigolearning.org', 'rafaela@aigolearning.org']
 
+    def __init__(self, bot):
+        self.bot = bot
+
     @staticmethod
     def send(subject: str, content: str) -> None:
         s = smtplib.SMTP(host='smtp.gmail.com', port=587)
@@ -18,19 +21,17 @@ class Email(commands.Cog):
         # TODO use dotenv  to hide this password
         s.login(Email.FROM, 'rvljmowvcjphtzez')
         
-        msg = EmailMessage()
-        msg.set_content(content + "\n\nThis email is from the Scheduling Bot")
-
-        msg['Subject'] = subject
-        msg['From'] = Email.FROM
         for recipient in Email.TO:
+            msg = EmailMessage()
+            msg.set_content(content + "\n\nThis email is from the Scheduling Bot")
+            
+            msg['Subject'] = subject
+            msg['From'] = Email.FROM
             msg['To'] = recipient
+            
             s.send_message(msg)
         
         s.quit()
 
-    def __init__(self, bot):
-        self.bot = bot
-    
 def setup(bot):
     bot.add_cog(Email(bot))
