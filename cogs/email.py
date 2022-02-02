@@ -14,6 +14,7 @@ class Email(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    # TODO asynchrounously send emails?
     @staticmethod
     def send(subject: str, content: str) -> None:
         s = smtplib.SMTP(host='smtp.gmail.com', port=587)

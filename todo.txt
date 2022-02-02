@@ -8,6 +8,8 @@ https://www.youtube.com/watch?v=pd-0G0MigUA
 ONLY USE RELOAD_COGS TO CHANGE SHIT WHEN THE BOT IS RUNNING
 ONLY TERMINATE BOT THROUGH COMMAND
 
+evaluators will cause an error when trying to schedule because I removed their roles of courses
+
 REDO THE ENVIRONMENT AND REQUIREMENTS
 
 # HARD
