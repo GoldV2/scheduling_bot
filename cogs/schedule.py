@@ -314,7 +314,7 @@ class ScheduleView(discord.ui.View):
             return evaluation_date
 
         Email.send("Evaluation Scheduling Process Started",
-            f"""Teacher {teacher.user.nick} began scheduling an evaluation.\nEvaluators Notified: {', '.join([f"{ev.name}#{ev.discriminator} AKA {ev.nick}" for ev in evaluators_available])}\n\nThis does not mean the evalution was confirmed.""")
+            f"""Teacher {teacher.user.nick} began scheduling an evaluation for {evaluation_info[0]}.\n\nEvaluators Notified: {', '.join([f"{ev.name}#{ev.discriminator} AKA {ev.nick}" for ev in evaluators_available])}\n\nThis does not mean the evalution was confirmed.""")
 
         hours = Constants.times_of_day[evaluation_info[PERIOD]].copy()
         while hours:
