@@ -393,7 +393,7 @@ class ScheduleView(discord.ui.View):
                         await Helpers.give_role(self.bot, teacher.user, "Pending Evaluation")
 
                         await teacher.user.send(f"Evaluation confirmed! Take note of day and time, {evaluation_date.month}/{evaluation_date.day} at {evaluation_info[HOUR]}. Say hi to your evaluator on Discord by adding them, {evaluator_available.name}#{evaluator_available.discriminator}")
-                        await evaluator_available.send(f"*DO NOT FORGET TO MARK YOUR EVALUATION AS COMPLETE ON THE SHEET*\n> https://docs.google.com/spreadsheets/d/1tgxIUaQHZHo26eA22klbtemsSReQugu3YBVToR3J2bQ\nEvaluation confirmed! Take note of day and time, {evaluation_date.month}/{evaluation_date.day} at {evaluation_info[HOUR]}. Say hi to the teacher you will evaluate on Discord by adding them, {teacher.user.name}#{teacher.user.discriminator}")
+                        await evaluator_available.send(f"*DO NOT FORGET TO MARK YOUR EVALUATION AS COMPLETE ON THE SHEET*\n> <https://docs.google.com/spreadsheets/d/1tgxIUaQHZHo26eA22klbtemsSReQugu3YBVToR3J2bQ>\nEvaluation confirmed! Take note of day and time, {evaluation_date.month}/{evaluation_date.day} at {evaluation_info[HOUR]}. Say hi to the teacher you will evaluate on Discord by adding them, {teacher.user.name}#{teacher.user.discriminator}")
 
                         break
 

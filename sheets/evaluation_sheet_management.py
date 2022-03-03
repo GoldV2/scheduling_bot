@@ -70,7 +70,7 @@ class EvaluationSheet(commands.Cog):
 
         n = '\n'
         Email.send("Evaluation Confirmed",
-            f'Evaluation confirmed and added to the sheet.\n\nSheet link: https://docs.google.com/spreadsheets/d/1tgxIUaQHZHo26eA22klbtemsSReQugu3YBVToR3J2bQ\n\nInformation\n{n.join([f"{it}: {iv}" for it, iv in zip(Constants.info_order, values)])}')
+            f'Evaluation confirmed and added to the sheet.\n\nSheet link: <https://docs.google.com/spreadsheets/d/1tgxIUaQHZHo26eA22klbtemsSReQugu3YBVToR3J2bQ>\n\nInformation\n{n.join([f"{it}: {iv}" for it, iv in zip(Constants.info_order, values)])}')
 
     @staticmethod
     def find_completed_evaluations():
