@@ -3,9 +3,6 @@ from email.message import EmailMessage
 
 from discord.ext import commands
 
-# Send the message via our own SMTP server.
-
-
 class Email(commands.Cog):
     
     FROM = 'rafaelpbcp@gmail.com'
@@ -14,7 +11,7 @@ class Email(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    # TODO asynchrounously send emails?
+    # TODO asynchrounously send emails? it takes a while and that stops halts the bot
     @staticmethod
     def send(subject: str, content: str) -> None:
         s = smtplib.SMTP(host='smtp.gmail.com', port=587)
