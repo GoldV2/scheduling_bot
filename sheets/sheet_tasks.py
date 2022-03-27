@@ -15,7 +15,7 @@ class SheetTasks(commands.Cog):
         self.update_evaluation_sheet.start()
         self.update_database_sheet.start()
 
-    @tasks.loop(minutes=10)
+    @tasks.loop(minutes=60)
     async def update_evaluation_sheet(self):
         completed_evaluations, to_delete = EvaluationSheet.find_completed_evaluations()
         if completed_evaluations:
@@ -89,15 +89,19 @@ class SheetTasks(commands.Cog):
             await evaluator.send(f"Hello, this is a warning message! An evaluation you were supposed to complete on {evaluation[2]} on {evaluation[3]} for {evaluation[1]} was marked as incomplete by me because it was never marked as complete. Please contact a Manager immediately!")
 
     @staticmethod
-    @tasks.loop(minutes=10)
+    @tasks.loop(minutes=60)
     async def update_database_sheet():
         members, evaluators = DB.fetch_all()
 
         DBSheet.update_database_sheet(members, evaluators)
 
     @update_evaluation_sheet.before_loop
-    async def before_tasks(self):
+    async def update_evaluation_sheet_before(self):
         await self.bot.wait_until_ready()
-    
+
+    @update_database_sheet.before_loop
+    async def update_database_sheet_before(self):
+        await self.bot.wait_until_ready()
+
 def setup(bot):
     bot.add_cog(SheetTasks(bot))

@@ -13,7 +13,8 @@ from cogs.constants import Constants
 class Helpers(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-
+        self.update_evaluator_availability_message.start()
+    
     @staticmethod    
     async def remove_role(member, name):
         role = get(member.guild.roles, name=name)
@@ -73,9 +74,8 @@ class Helpers(commands.Cog):
 
         return sorted_evaluator_avais
 
-    @staticmethod
-    @tasks.loop(minutes=10)
-    async def update_evaluator_availability_message(bot):
+    @tasks.loop(minutes=60)
+    async def update_evaluator_availability_message(self, bot):
         evaluator_avais = Helpers.get_evaluator_availabilities()
         for channel in bot.guilds[0].channels:
             if channel.name == 'evaluator-availability':
@@ -151,6 +151,10 @@ class Helpers(commands.Cog):
             days_ahead += 7
 
         return d + timedelta(days_ahead)
+
+    @update_evaluator_availability_message.before_loop
+    async def update_evaluator_availability_message_before(self):
+        await self.client.wait_until_ready()
 
 def setup(bot):
     bot.add_cog(Helpers(bot))
