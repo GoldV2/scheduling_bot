@@ -109,6 +109,11 @@ class Helpers(commands.Cog):
         for i, msg in enumerate(msgs[::-1]):
             await msg.edit(embed=embeds[i])
 
+    @commands.command()
+    @commands.is_owner()
+    async def update_evaluator_availability_message_command(self, ctx):
+        await self.update_evaluator_availability_message()
+
     @staticmethod
     def find_evaluator_availables(bot, evaluation_info):
         COURSE = 0
